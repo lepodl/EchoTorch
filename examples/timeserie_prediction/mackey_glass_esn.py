@@ -25,6 +25,7 @@ import torch
 from echotorch.datasets.MackeyGlassDataset import MackeyGlassDataset
 import echotorch.nn as etnn
 import echotorch.utils
+import echotorch.utils.matrix_generation as mg
 from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
 
@@ -50,6 +51,13 @@ mackey_glass_test_dataset = MackeyGlassDataset(test_sample_length, n_test_sample
 trainloader = DataLoader(mackey_glass_train_dataset, batch_size=1, shuffle=False, num_workers=2)
 testloader = DataLoader(mackey_glass_test_dataset, batch_size=1, shuffle=False, num_workers=2)
 
+# Random weight generator
+w_generator = mg.matrix_factory.get_generator(
+    "normal",
+    mean=0.0,
+    std=1.0
+)
+
 # ESN cell
 esn = etnn.LiESN(
     input_dim=input_dim,
@@ -57,44 +65,48 @@ esn = etnn.LiESN(
     output_dim=1,
     spectral_radius=spectral_radius,
     learning_algo='inv',
-    leaky_rate=leaky_rate
+    leaky_rate=leaky_rate,
+    w_generator=w_generator,
+    win_generator=w_generator,
+    wbias_generator=w_generator,
 )
 if use_cuda:
     esn.cuda()
 # end if
 
 # For each batch
-for data in trainloader:
-    # Inputs and outputs
-    inputs, targets = data
+if __name__ == '__main__':
+    for data in trainloader:
+        # Inputs and outputs
+        inputs, targets = data
 
-    # To variable
-    inputs, targets = Variable(inputs), Variable(targets)
-    if use_cuda: inputs, targets = inputs.cuda(), targets.cuda()
+        # To variable
+        inputs, targets = Variable(inputs), Variable(targets)
+        if use_cuda: inputs, targets = inputs.cuda(), targets.cuda()
 
-    # Accumulate xTx and xTy
-    esn(inputs, targets)
-# end for
+        # Accumulate xTx and xTy
+        esn(inputs, targets)
+    # end for
 
-# Finalize training
-esn.finalize()
+    # Finalize training
+    esn.finalize()
 
-# Train MSE
-dataiter = iter(trainloader)
-train_u, train_y = dataiter.next()
-train_u, train_y = Variable(train_u), Variable(train_y)
-if use_cuda: train_u, train_y = train_u.cuda(), train_y.cuda()
-y_predicted = esn(train_u)
-print(u"Train MSE: {}".format(echotorch.utils.mse(y_predicted.data, train_y.data)))
-print(u"Test NRMSE: {}".format(echotorch.utils.nrmse(y_predicted.data, train_y.data)))
-print(u"")
+    # Train MSE
+    dataiter = iter(trainloader)
+    train_u, train_y = dataiter.next()
+    train_u, train_y = Variable(train_u), Variable(train_y)
+    if use_cuda: train_u, train_y = train_u.cuda(), train_y.cuda()
+    y_predicted = esn(train_u)
+    print(u"Train MSE: {}".format(echotorch.utils.mse(y_predicted.data, train_y.data)))
+    print(u"Test NRMSE: {}".format(echotorch.utils.nrmse(y_predicted.data, train_y.data)))
+    print(u"")
 
-# Test MSE
-dataiter = iter(testloader)
-test_u, test_y = dataiter.next()
-test_u, test_y = Variable(test_u), Variable(test_y)
-if use_cuda: test_u, test_y = test_u.cuda(), test_y.cuda()
-y_predicted = esn(test_u)
-print(u"Test MSE: {}".format(echotorch.utils.mse(y_predicted.data, test_y.data)))
-print(u"Test NRMSE: {}".format(echotorch.utils.nrmse(y_predicted.data, test_y.data)))
-print(u"")
+    # Test MSE
+    dataiter = iter(testloader)
+    test_u, test_y = dataiter.next()
+    test_u, test_y = Variable(test_u), Variable(test_y)
+    if use_cuda: test_u, test_y = test_u.cuda(), test_y.cuda()
+    y_predicted = esn(test_u)
+    print(u"Test MSE: {}".format(echotorch.utils.mse(y_predicted.data, test_y.data)))
+    print(u"Test NRMSE: {}".format(echotorch.utils.nrmse(y_predicted.data, test_y.data)))
+    print(u"")
