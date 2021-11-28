@@ -1,0 +1,12 @@
+# This is an implicit value, here for clarity
+--index-url https://pypi.python.org/simple/
+sphinx_bootstrap_theme
+future
+numpy>=1.18.3
+scipy
+scikit-learn
+matplotlib
+torch==1.3.0
+torchvision==0.4.1
+networkx
+tqdm
