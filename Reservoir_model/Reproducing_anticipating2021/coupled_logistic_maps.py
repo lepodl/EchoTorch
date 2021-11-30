@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from multiprocessing.pool import ThreadPool
 
 
-# rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
-# rc('text', usetex=True)
+plt.rc('font', **{'family': 'sans-serif', 'sans-serif': ['Helvetica']})
+plt.rc('text', usetex=True)
 
 
 class Coupled_logistic_maps:
@@ -46,7 +46,7 @@ class TestLogisticMaps(unittest.TestCase):
     def initialize():
         np.random.seed()
 
-    def _test_system_behavior(self):
+    def test_system_behavior(self):
         epsilon_list = [0.20, 0.22, 0.24, 0.26]
         systems = [Coupled_logistic_maps(epsilon, 1) for epsilon in epsilon_list]
 
@@ -56,25 +56,39 @@ class TestLogisticMaps(unittest.TestCase):
         with ThreadPool(4, initializer=self.initialize, ) as p:
             data_list = p.map(_run, range(4))
 
+        predict_data_path = "./data/predicted_data.npy"
+        if not os.path.exists(predict_data_path):
+            print("Please run ./reservoir_train.py before plot results")
+            raise ValueError
+        else:
+            predicted_data = np.load(predict_data_path)
+        predicted_data = np.transpose(predicted_data, (0, 2, 1))
+        print(f"predict data sahpe, {predicted_data.shape}")
+
         fig, ax = plt.subplots(2, 4, figsize=(10, 5), dpi=300)
         ax = ax.flatten()
         for i in range(4):
-            ax[i].scatter(data_list[i][0][-1000:-1], data_list[i][0][-999:], label=r'$\epsilon$=%.2f' % epsilon_list[i],
-                          s=0.5, marker=",")
-            ax[i].legend(loc="best", frameon=False)
+            ax[i].scatter(data_list[i][0][-500:-1], data_list[i][0][-499:],
+                          s=0.5, marker=",", color="b")
+            ax[i].scatter(predicted_data[i][0][-500:-1], data_list[i][0][-499:],
+                          s=0.5, marker=",", color="r")
             ax[i].set_xlabel(r'$x_{1}(n)$')
             ax[i].set_ylabel(r'$x_{1}(n+1)$')
             ax[i].set_xlim([0, 1])
             ax[i].set_ylim([0, 1])
+            ax[i].text(0.4, 0.1, r'$\epsilon$=%.2f' % epsilon_list[i], )
             ax[i].set_aspect("equal")
         for i in np.arange(4, 8):
-            ax[i].scatter(data_list[i - 4][0][-1000:], data_list[i - 4][1][-1000:],
-                          label=r'$\epsilon$=%.2f' % epsilon_list[i - 4], s=0.5, marker=",")
-            ax[i].legend(loc="best", frameon=False)
+            ax[i].scatter(data_list[i - 4][0][-500:], data_list[i - 4][1][-500:],
+                           s=0.5, marker=",", color="b")
+            ax[i].scatter(predicted_data[i - 4][0][-500:], predicted_data[i - 4][1][-500:],
+                           s=0.5, marker=",", color="r")
+
             ax[i].set_xlabel(r'$x_{1}$')
             ax[i].set_ylabel(r'$x_{2}$')
             ax[i].set_xlim([0, 1])
             ax[i].set_ylim([0, 1])
+            ax[i].text(0.7, 0.1, r'$\epsilon$=%.2f' % epsilon_list[i- 4], )
             ax[i].set_aspect("equal")
 
         fig.tight_layout(pad=0.4, w_pad=0, h_pad=0)
@@ -102,11 +116,11 @@ class TestLogisticMaps(unittest.TestCase):
 
             ax.text(100, 0.7, r'$\epsilon$=%.2f' % epsilon_list[i], )
             # ax.tick_params(axis='x', labelcolor='cornflowerblue')
-        fig.tight_layout(pad=0.4, w_pad=0.1, h_pad=0.1)
+        fig.tight_layout(pad=0.4, w_pad=0, h_pad=0)
         fig.savefig("./system_evolution.png")
         plt.close(fig)
 
-    def test_generate_train_test_data(self):
+    def _test_generate_train_test_data(self):
         epsilon_list = [0.20, 0.22, 0.24, 0.26]
         ll = len(epsilon_list)
         systems = [Coupled_logistic_maps(epsilon, 1) for epsilon in epsilon_list]
@@ -122,10 +136,7 @@ class TestLogisticMaps(unittest.TestCase):
         train_data = train_data.reshape((2, -1))
         print(train_data[0].shape)
         train_para = np.concatenate([np.ones(2000) * epsilon_list[i] for i in range(3)])
-        train_data = np.stack([train_data[0], train_data[1],  train_para], axis=0)
+        train_data = np.stack([train_data[0], train_data[1], train_para], axis=0)
         os.makedirs("./data", exist_ok=True)
         np.save("./data/train_data.npy", train_data)
 
-    def _test_reservoir_predict(self):
-        # TODO(2021.11.28): It may be supposed to implement in an Independent file.
-        pass

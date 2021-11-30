@@ -128,6 +128,8 @@ class RRCell(Node):
             x = self._add_constant(x)
         # end if
 
+        x = self._output_func(x)
+
         # Training or eval
         if self.training:
             for b in range(batch_size):
@@ -156,6 +158,7 @@ class RRCell(Node):
             for b in range(batch_size):
                 outputs[b] = torch.mm(self.w_out, x[b].t()).t()
             # end for
+            outputs = self._output_func(outputs)
 
             if self._softmax_output:
                 return self._softmax(outputs)
@@ -221,6 +224,21 @@ class RRCell(Node):
     # endregion PRIVATE
 
     # region OVERRIDE
+
+    #################################################################################################################
+    def _output_func(self, x):
+        """
+        In paper anticipating 2021, here we need an output function.
+        """
+
+        x[:, :, ::2] = x[:, :, ::2]
+        x[:, :, 1::2] = x[:, :, 1::2].pow_(2)
+
+        return x
+
+
+    #################################################################################################################
+
 
     # Extra-information
     def extra_repr(self):
