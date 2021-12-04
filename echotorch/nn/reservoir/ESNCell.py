@@ -42,7 +42,7 @@ class ESNCell(Node, Observable):
     """
 
     # Constructor
-    def __init__(self, input_dim, output_dim, w, w_in, w_bias, input_scaling=1.0, nonlin_func=torch.tanh, washout=0,
+    def __init__(self, input_dim, output_dim, w, w_in, w_bias, input_scaling=1.0, nonlin_func=torch.tanh, washout=0, memory=0,
                  noise_generator=None, debug=Node.NO_DEBUG, test_case=None, dtype=torch.float32):
         """
         Constructor
@@ -75,6 +75,7 @@ class ESNCell(Node, Observable):
         self._input_scaling = input_scaling
         self._nonlin_func = nonlin_func
         self._washout = washout
+        self._memory = memory
         self._noise_generator = noise_generator
         self._dtype = dtype
 
@@ -121,6 +122,16 @@ class ESNCell(Node, Observable):
         """
         self._washout = washout
     # end washout
+
+    @property
+    def memory(self):
+        return self._memory
+
+
+    # Set washout
+    @memory.setter
+    def memory(self, memory):
+        self._memory = memory
 
     # Get W's spectral radius
     @property
@@ -341,7 +352,7 @@ class ESNCell(Node, Observable):
         :return: String
         """
         s = super(ESNCell, self).extra_repr()
-        s += ', nonlin_func={_nonlin_func}, washout={_washout}'
+        s += ', nonlin_func={_nonlin_func}, washout={_washout}, memory={_memory}'
         return s.format(**self.__dict__)
     # end extra_repr
 

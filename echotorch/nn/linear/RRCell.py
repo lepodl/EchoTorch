@@ -40,7 +40,7 @@ class RRCell(Node):
     # Constructor
     def __init__(self, input_dim, output_dim, ridge_param=0.0, with_bias=True, learning_algo='inv',
                  softmax_output=False, normalize_output=False, averaged=True, debug=Node.NO_DEBUG, test_case=None,
-                 dtype=torch.float32):
+                 dtype=torch.float32, handle_output=False):
         """
         Constructor
         :param input_dim: Feature space dimension
@@ -54,6 +54,7 @@ class RRCell(Node):
         :param debug: Debug mode
         :param test_case: Test case to call for test.
         :param dtype: Data type
+        :param handle_output: whether to map output by a specified function
         """
         # Superclass
         super(RRCell, self).__init__(
@@ -74,6 +75,7 @@ class RRCell(Node):
         self._softmax = torch.nn.Softmax(dim=2)
         self._averaged = averaged
         self._n_samples = 0
+        self._handle_output = handle_output
 
         # Size
         if self._with_bias:
@@ -87,6 +89,17 @@ class RRCell(Node):
         self.register_buffer('xTy', Variable(torch.zeros(self._x_size, output_dim, dtype=dtype), requires_grad=False))
         self.register_buffer('w_out', Variable(torch.zeros(output_dim, input_dim, dtype=dtype), requires_grad=False))
     # end __init__
+
+    #################################################################################################################
+    def _output_func(self, value):
+        """
+        In paper anticipating 2021, here we need an output function.
+        """
+        value[:, :, ::2] = value[:, :, ::2]
+        value[:, :, 1::2] = value[:, :, 1::2].pow_(2)
+        return value
+    #################################################################################################################
+
 
     # region PROPERTIES
 
@@ -128,7 +141,9 @@ class RRCell(Node):
             x = self._add_constant(x)
         # end if
 
-        x = self._output_func(x)
+        # handle for outputs before linear readout
+        if self._handle_output:
+            x = self._output_func(x)
 
         # Training or eval
         if self.training:
@@ -158,7 +173,6 @@ class RRCell(Node):
             for b in range(batch_size):
                 outputs[b] = torch.mm(self.w_out, x[b].t()).t()
             # end for
-            outputs = self._output_func(outputs)
 
             if self._softmax_output:
                 return self._softmax(outputs)
@@ -224,21 +238,6 @@ class RRCell(Node):
     # endregion PRIVATE
 
     # region OVERRIDE
-
-    #################################################################################################################
-    def _output_func(self, x):
-        """
-        In paper anticipating 2021, here we need an output function.
-        """
-
-        x[:, :, ::2] = x[:, :, ::2]
-        x[:, :, 1::2] = x[:, :, 1::2].pow_(2)
-
-        return x
-
-
-    #################################################################################################################
-
 
     # Extra-information
     def extra_repr(self):

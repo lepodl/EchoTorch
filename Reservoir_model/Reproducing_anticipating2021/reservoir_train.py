@@ -13,6 +13,7 @@ import echotorch.utils
 import echotorch.utils.matrix_generation as mg
 from torch.autograd import Variable
 from torch.utils.data.dataloader import DataLoader
+import matplotlib.pyplot as plt
 
 
 # Customized Dataset
@@ -87,17 +88,17 @@ if __name__ == '__main__':
         max=1.0
     )
 
-    esn = etnn.LiESN(
+    esn = etnn.CLiESN(
         input_dim=input_dim,
         hidden_dim=n_hidden,
         output_dim=2,
-        spectral_radius=spectral_radius,
         learning_algo='inv',
         leaky_rate=leaky_rate,
         w_generator=w_generator,
         win_generator=win_generator,
         wbias_generator=wbias_generator,
         washout=1000,
+        memory=1,
         with_bias=False,
         ridge_param=1e-5,
     )
@@ -106,7 +107,7 @@ if __name__ == '__main__':
 
     # Train phase
     # Inputs and outputs
-    inputs, targets = data.T, data.T
+    inputs, targets = data, data
     targets = targets[:, :-1]
     inputs = torch.from_numpy(inputs[np.newaxis, :,:].astype(np.float32))
     targets = torch.from_numpy(targets[np.newaxis, :,:].astype(np.float32))
@@ -123,18 +124,41 @@ if __name__ == '__main__':
     esn.finalize()
 
     # output during train phase
-    vout = esn(inputs)
-
+    # vout = esn(inputs)
+    vout = inputs
     # Test phase
-    vout = vout[:, -2000:, :]
-    tt = vout.size(1)
+
     epsilon_ls = [0.2, 0.22, 0.24, 0.26]
     test_ls = []
-    for epsilon in epsilon_ls:
-        test_u = torch.stack([vout[:,:,0], vout[:,:,1], torch.ones((1, tt)) * epsilon], dim=2)
+    fig, ax = plt.subplots(2, 4, figsize=(10, 5), dpi=300)
+    ax = ax.flatten()
+    for idx, epsilon in enumerate(epsilon_ls):
+        vvout = vout[:, :2000, :]
+        tt = vvout.size(1)
+        test_u = torch.stack([vvout[:,:,0], vvout[:,:,1], torch.ones((1, tt)) * epsilon], dim=2)
         test_u= Variable(test_u)
         if use_cuda: test_u = test_u.cuda()
         y_predicted = esn(test_u)
-        test_ls.append(y_predicted.cpu().numpy().squeeze())
+        y_predicted = y_predicted.cpu().numpy().squeeze()
+        test_ls.append(y_predicted)
+        ax[idx].scatter(vvout[0, -500:-1, 0], vvout[0, -499:, 0], s=0.5, marker=",", color="b")
+        ax[idx].scatter(y_predicted[-500:-1, 0], y_predicted[-499:, 0], s=0.5, marker=",", color="r")
+        ax[idx].set_xlabel(r'$x_{1}(n)$')
+        ax[idx].set_ylabel(r'$x_{1}(n+1)$')
+        ax[idx].set_xlim([0, 1])
+        ax[idx].set_ylim([0, 1])
+        ax[idx].text(0.4, 0.1, r'$\epsilon$=%.2f' % epsilon_ls[idx], )
+        ax[idx].set_aspect("equal")
+
+        ax[idx + 4].scatter(vvout[0, -500:, 0], vvout[0, -500:, 1], s=0.5, marker=",", color="b")
+        ax[idx + 4].scatter(y_predicted[-500:, 0], y_predicted[-500:, 1], s=0.5, marker=",", color="r")
+        ax[idx + 4].set_xlabel(r'$x_{1}$')
+        ax[idx + 4].set_ylabel(r'$x_{2}$')
+        ax[idx + 4].set_xlim([0, 1])
+        ax[idx + 4].set_ylim([0, 1])
+        ax[idx + 4].text(0.8, 0.1, r'$\epsilon$=%.2f' % epsilon_ls[idx], )
+        ax[idx + 4].set_aspect("equal")
+
     test_ls = np.stack(test_ls, axis=0)
-    np.save(os.path.join(root_dir, 'predicted_data.npy'), test_ls)
+    plt.show()
+    # np.save(os.path.join(root_dir, 'predicted_data.npy'), test_ls)

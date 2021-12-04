@@ -46,7 +46,7 @@ class TestLogisticMaps(unittest.TestCase):
     def initialize():
         np.random.seed()
 
-    def test_system_behavior(self):
+    def _test_system_behavior(self):
         epsilon_list = [0.20, 0.22, 0.24, 0.26]
         systems = [Coupled_logistic_maps(epsilon, 1) for epsilon in epsilon_list]
 
@@ -120,7 +120,7 @@ class TestLogisticMaps(unittest.TestCase):
         fig.savefig("./system_evolution.png")
         plt.close(fig)
 
-    def _test_generate_train_test_data(self):
+    def test_generate_train_test_data(self):
         epsilon_list = [0.20, 0.22, 0.24, 0.26]
         ll = len(epsilon_list)
         systems = [Coupled_logistic_maps(epsilon, 1) for epsilon in epsilon_list]
@@ -136,7 +136,7 @@ class TestLogisticMaps(unittest.TestCase):
         train_data = train_data.reshape((2, -1))
         print(train_data[0].shape)
         train_para = np.concatenate([np.ones(2000) * epsilon_list[i] for i in range(3)])
-        train_data = np.stack([train_data[0], train_data[1], train_para], axis=0)
+        train_data = np.stack([train_data[0], train_data[1], train_para], axis=1)
         os.makedirs("./data", exist_ok=True)
         np.save("./data/train_data.npy", train_data)
 

@@ -249,7 +249,7 @@ class ESN(Node):
     # region OVERRIDE
 
     # Forward
-    def forward(self, u, y=None, reset_state=True):
+    def forward(self, u, y=None, reset_state=False):
         """
         Forward
         :param u: Input signal.
@@ -263,7 +263,7 @@ class ESN(Node):
         if not self.training:
             return self._output(hidden_states, None)
         else:
-            return self._output(hidden_states, y[:, self._esn_cell.washout:])
+            return self._output(hidden_states[:, :-self._esn_cell.memory], y[:, self._esn_cell.washout + self._esn_cell.memory:])
         # end if
     # end forward
 

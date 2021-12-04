@@ -47,6 +47,8 @@ from .reservoir.HESN import HESN
 from .reservoir.LiESN import LiESN
 from .reservoir.LiESNCell import LiESNCell
 from .reservoir.StackedESN import StackedESN
+from .reservoir.CLiESN import CLiESN
+from .reservoir.CLiESNCell import CLiESNCell
 
 # Import linear nodes
 from .linear.RRCell import RRCell
@@ -58,5 +60,5 @@ from .utils.Identity import Identity
 __all__ = [
     'Conceptor', 'ConceptorNet', 'ICACell', 'OnlinePCACell', 'PCACell', 'SFACell',
     'BDESN', 'BDESNPCA', 'EESN', 'ESN', 'ESNCell', 'GatedESN', 'HESN', 'LiESN', 'LiESNCell', 'Node', 'StackedESN',
-    'RRCell', 'Identity', 'CSTLoss'
+    'RRCell', 'Identity', 'CSTLoss', 'CLiESN', 'CLiESN'
 ]
