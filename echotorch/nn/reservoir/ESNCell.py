@@ -218,6 +218,7 @@ class ESNCell(Node, Observable):
         for b in range(n_batches):
             # Reset hidden layer
             if reset_state:
+                print(f"reset_hidden in {self._forward_calls}")
                 self.reset_hidden()
             # end if
 

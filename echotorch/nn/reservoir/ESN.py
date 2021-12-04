@@ -263,7 +263,11 @@ class ESN(Node):
         if not self.training:
             return self._output(hidden_states, None)
         else:
-            return self._output(hidden_states[:, :-self._esn_cell.memory], y[:, self._esn_cell.washout + self._esn_cell.memory:])
+            if self._esn_cell.memory == 0:
+                return self._output(hidden_states, y[:, self._esn_cell.washout + self._esn_cell.memory:])
+            else:
+                return self._output(hidden_states[:, :-self._esn_cell.memory],
+                                    y[:, self._esn_cell.washout + self._esn_cell.memory:])
         # end if
     # end forward
 

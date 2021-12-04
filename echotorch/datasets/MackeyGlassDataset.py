@@ -4,6 +4,7 @@
 # Imports
 import torch
 from torch.utils.data.dataset import Dataset
+from torchvision import transforms
 import collections
 
 
@@ -70,6 +71,7 @@ class MackeyGlassDataset(Dataset):
 
         # Inputs
         inputs = torch.tan(inp - 1)
+        # inputs = (inputs - torch.min(inputs)) / (torch.max(inputs) - torch.min(inputs))
 
         # Squash timeseries through tanh
         return inputs[:-1], inputs[1:]

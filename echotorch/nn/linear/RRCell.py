@@ -143,6 +143,7 @@ class RRCell(Node):
 
         # handle for outputs before linear readout
         if self._handle_output:
+            print("handle output True")
             x = self._output_func(x)
 
         # Training or eval
